@@ -91,6 +91,8 @@ def generate_password(min_length=15, numbers=True, special_characters=True):
 
 # Function to save the password with all inputted information to the file
 def save_password(website, email, password, key):
+    # Strips the website input of any white space
+    website = website.strip()
     encrypted_email = encrypt_message(email, key)
     encrypted_password = encrypt_message(password, key)
     
@@ -99,6 +101,8 @@ def save_password(website, email, password, key):
 
 # Function to retrieve all information about the inputted site
 def retrieve_password(website, key):
+    # Strips the website input of any white space
+    website = website.strip()
     with open("passwords.txt", "r") as file:
         for line in file:
             parts = line.strip().split(', ')
@@ -107,6 +111,55 @@ def retrieve_password(website, key):
                 decrypted_password = decrypt_message(parts[2], key)
                 return f"Website: {website}, Email: {decrypted_email}, Password: {decrypted_password}"
     return None
+
+# Function to remove all information for the given website, with a confirmation prompt
+def remove_password(website, key):
+    # Trim any extra spaces from the website name
+    website = website.strip()
+
+    # Read all lines from the passwords file
+    with open("passwords.txt", "r") as file:
+        lines = file.readlines()
+
+    removed_info = None
+
+    # Open the passwords file in write mode to remove the specified website's information
+    with open("passwords.txt", "w") as file:
+        # Iterate through each line in the file
+        for line in lines:
+            # Split the line into parts using comma as the delimiter
+            parts = line.strip().split(', ')
+            # If the first part (website name) matches the specified website
+            if parts[0] == website:
+                # Decrypt the email and password stored in the line
+                decrypted_email = decrypt_message(parts[1], key)
+                decrypted_password = decrypt_message(parts[2], key)
+                # Store the information to be removed
+                removed_info = f"Website: {website}, Email: {decrypted_email}, Password: {decrypted_password}"
+                # Continue to the next line without writing this line to the file
+                continue
+            # Write the line to the file if it's not the one to be removed
+            file.write(line)
+
+    # If information was found to be removed
+    if removed_info:
+        # Print the information to be removed
+        print("Information to be removed:")
+        print(removed_info)
+        # Ask for confirmation before removing
+        confirmation = input("Are you sure you want to remove this information? (y/n): ")
+        if confirmation.lower() == 'y':
+            print("Information removed.")
+        else:
+            # If the user decides to cancel then readd the information
+            print("Removal canceled.")
+            # Reopen the password.txt file and append the information back
+            with open("passwords.txt", "a") as file:
+                save_password(website, decrypted_email, decrypted_password, key)
+    else:
+        # If no information was found for the given website
+        print("No information found for the given website.")
+
 
 # Function to generate a new encryption key if one doesn't exist
 def generate_or_load_key():
@@ -130,7 +183,7 @@ def main():
 
     while True:
         # Get the option choice of the user
-        option = input("Enter '1' to generate a new password, or '2' to retrieve information about a site: ")
+        option = input("Enter '1' to generate a new password, or '2' to retrieve information about a site, or '3' to remove information for a site: ")
 
         # If they choose to generate a new password 
         if option == '1':
@@ -153,10 +206,10 @@ def main():
 
         # Else if they choose to retrieve all information for a website
         elif option == '2':
-            # Get the key
+            # Get the website name
             website = input("Enter the website name to retrieve information: ")
 
-            # Search for the information using the website as the key
+            # Search for the information using the website name
             retrieved_info = retrieve_password(website, key)
 
             # If it the data for that site exists
@@ -166,6 +219,12 @@ def main():
             else:
                 print("No information found for the given website.")
         
+        # Else if the users chooses to remove all information for a given website
+        elif option == '3':
+            # Get the website name
+            website = input("Enter the website name to remove information: ")
+            remove_password(website, key)
+
         # Else they inputted an invalid option
         else:
             print("Invalid option.")
