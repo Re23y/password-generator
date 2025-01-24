@@ -3,6 +3,14 @@ import string
 import os
 from cryptography.fernet import Fernet
 
+# Get the path to the user's Documents folder
+DOCUMENTS_FOLDER = os.path.expanduser("~/Documents")
+PASSWORD_FILE_PATH = os.path.join(DOCUMENTS_FOLDER, "passwords.txt")
+
+# Ensure the Documents folder exists (usually exists on all systems)
+if not os.path.exists(DOCUMENTS_FOLDER):
+    os.makedirs(DOCUMENTS_FOLDER)
+
 # Generates a new encryption key
 def generate_key():
     return Fernet.generate_key()
@@ -96,14 +104,14 @@ def save_password(website, email, password, key):
     encrypted_email = encrypt_message(email, key)
     encrypted_password = encrypt_message(password, key)
     
-    with open("passwords.txt", "a") as file:
+    with open(PASSWORD_FILE_PATH, "a") as file:
         file.write(f"{website}, {encrypted_email}, {encrypted_password}\n")
 
 # Function to retrieve all information about the inputted site
 def retrieve_password(website, key):
     # Strips the website input of any white space
     website = website.strip()
-    with open("passwords.txt", "r") as file:
+    with open(PASSWORD_FILE_PATH, "r") as file:
         for line in file:
             parts = line.strip().split(', ')
             if parts[0] == website:
@@ -118,13 +126,13 @@ def remove_password(website, key):
     website = website.strip()
 
     # Read all lines from the passwords file
-    with open("passwords.txt", "r") as file:
+    with open(PASSWORD_FILE_PATH, "r") as file:
         lines = file.readlines()
 
     removed_info = None
 
     # Open the passwords file in write mode to remove the specified website's information
-    with open("passwords.txt", "w") as file:
+    with open(PASSWORD_FILE_PATH, "w") as file:
         # Iterate through each line in the file
         for line in lines:
             # Split the line into parts using comma as the delimiter
